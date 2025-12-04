@@ -32,7 +32,17 @@ class BayNet:
 
         
 
-    def exact_inference(queryVars, evidenceVars):
+    def exact_inference(evidenceVars, queryVars):
         return
 
 
+    def prior(evidenceVars, queryVars):
+        return
+
+
+    def Rejection(evidenceVars, queryVars):
+        return
+
+
+    def LW(evidenceVars, queryVars):
+        return
