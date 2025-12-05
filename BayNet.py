@@ -1,3 +1,5 @@
+import random
+
 class Node:
     def __init__(self, cpt, dependants):
         self.dependants = dependants
@@ -36,8 +38,61 @@ class BayNet:
         return
 
 
-    def prior(evidenceVars, queryVars):
+    def prior(evidenceVars = dict[str, bool], queryVars=None):
+
+        # Burglary
+        B_true = BayNet.Nodes["B"].cpt[()]
+        rand = round(random.random(), 4)
+        if rand < B_true:
+            B_value = True
+        else:
+            B_value = False
+
+
+        # Earthquake
+        E_true = BayNet.Nodes["E"].cpt[()]
+        rand = round(random.random(), 4)
+        if rand < E_true:
+            E_value = True
+        else:
+            E_value = False
+
+
+        # Alarm
+        A_true = BayNet.Nodes["A"].cpt[(B_value, E_value)]
+        rand = round(random.random(), 4)
+        if rand < A_true:
+            A_value = True
+        else:
+            A_value = False
+
+
+        # JohnCalls
+        J_true = BayNet.Nodes["J"].cpt[A_value]
+        rand = round(random.random(), 4)
+        if rand < J_true:
+            J_value = True
+        else:
+            J_value = False
+
+
+        # MaryCalls
+        M_true = BayNet.Nodes["M"].cpt[A_value]
+        rand = round(random.random(), 4)
+        if rand < M_true:
+            M_value = True
+        else:
+            M_value = False
+
+
+        # evidenceVars is a list of tuples
+        for var in evidenceVars:
+
+
+
         return
+
+
 
 
     def Rejection(evidenceVars, queryVars):
@@ -46,3 +101,8 @@ class BayNet:
 
     def LW(evidenceVars, queryVars):
         return
+
+
+
+if __name__ == "__main__":
+    BayNet.prior()
