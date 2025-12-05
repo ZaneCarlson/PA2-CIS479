@@ -99,59 +99,146 @@ class BayNet:
         return Q_normalized
 
 
-    def prior(evidenceVars = dict[str, bool], queryVars=None):
+    def prior(evidenceVars: Dict[str, bool], queryVars: List[str], num_samples: int, num_runs: int = 10):
+        B_count_true = 0
+        B_count_false = 0
+        E_count_true = 0
+        E_count_false = 0
+        A_count_true = 0
+        A_count_false = 0
+        J_count_true = 0
+        J_count_false = 0
+        M_count_true = 0
+        M_count_false = 0
 
-        # Burglary
-        B_true = BayNet.Nodes["B"].cpt[()]
-        rand = round(random.random(), 4)
-        if rand < B_true:
-            B_value = True
-        else:
-            B_value = False
+        prob_sums = {q: 0.0 for q in queryVars}
 
-
-        # Earthquake
-        E_true = BayNet.Nodes["E"].cpt[()]
-        rand = round(random.random(), 4)
-        if rand < E_true:
-            E_value = True
-        else:
-            E_value = False
-
-
-        # Alarm
-        A_true = BayNet.Nodes["A"].cpt[(B_value, E_value)]
-        rand = round(random.random(), 4)
-        if rand < A_true:
-            A_value = True
-        else:
-            A_value = False
+        for x in range(10):
+            query_true_counts = {q: 0 for q in
+            queryVars}  # counts only for the query variables, conditioned on evidence
+            kept_samples = 0  # samples that match the evidence
+            num = 0
 
 
-        # JohnCalls
-        J_true = BayNet.Nodes["J"].cpt[A_value]
-        rand = round(random.random(), 4)
-        if rand < J_true:
-            J_value = True
-        else:
-            J_value = False
+            # Run through the BayNetwork num_samples times
+            while num < num_samples:
+                # Burglary
+                B_true = BayNet.Nodes["B"].cpt[()]
+                rand = round(random.random(), 4)
+                if rand < B_true:
+                    B_value = True
+                    B_count_true += 1
+                else:
+                    B_value = False
+                    B_count_false += 1
 
 
-        # MaryCalls
-        M_true = BayNet.Nodes["M"].cpt[A_value]
-        rand = round(random.random(), 4)
-        if rand < M_true:
-            M_value = True
-        else:
-            M_value = False
+                # Earthquake
+                E_true = BayNet.Nodes["E"].cpt[()]
+                rand = round(random.random(), 4)
+                if rand < E_true:
+                    E_value = True
+                    E_count_true += 1
+                else:
+                    E_value = False
+                    E_count_false += 1
 
 
-        # evidenceVars is a list of tuples
-        for var in evidenceVars:
+                # Alarm
+                A_true = BayNet.Nodes["A"].cpt[(B_value, E_value)]
+                rand = round(random.random(), 4)
+                if rand < A_true:
+                    A_value = True
+                    A_count_true += 1
+                else:
+                    A_value = False
+                    A_count_false += 1
+
+
+                # JohnCalls
+                J_true = BayNet.Nodes["J"].cpt[A_value,]
+                rand = round(random.random(), 4)
+                if rand < J_true:
+                    J_value = True
+                    J_count_true += 1
+                else:
+                    J_value = False
+                    J_count_false += 1
+
+
+                # MaryCalls
+                M_true = BayNet.Nodes["M"].cpt[A_value,]
+                rand = round(random.random(), 4)
+                if rand < M_true:
+                    M_value = True
+                    M_count_true += 1
+                else:
+                    M_value = False
+                    M_count_false += 1
+
+                # for da sampling! Reject if no likely
+                sample = {
+                    "B": B_value,
+                    "E": E_value,
+                    "A": A_value,
+                    "J": J_value,
+                    "M": M_value
+                }
+
+                # check if this sample matches the evidenceVars dict
+                matches_evidence = True
+                if evidenceVars is not None:
+                    for var, val in evidenceVars.items(): # var is "A", "B", "J"; val is True/False
+                        if sample[var] != val:
+                            matches_evidence = False
+                            break
+
+                # if it doesn't match evidence, skip using this sample for queries
+                if not matches_evidence:
+                    num += 1
+                    continue
+
+                # this sample matches the evidence, keep it
+                kept_samples += 1
+
+                # update counts for query variables only, from this sample
+                for q in queryVars:
+                    if sample[q] is True:
+                        query_true_counts[q] += 1
+
+                num += 1
 
 
 
-        return
+            # Compute probabilities for THIS RUN :)))
+            if kept_samples > 0:
+                run_probs = {q: query_true_counts[q] / kept_samples for q in queryVars}
+            else:
+                run_probs = {q: 0.0 for q in queryVars}
+
+            # Add to total sum
+            for q in queryVars:
+                prob_sums[q] += run_probs[q]
+
+        # average over 10 runs, to the 4th decimal place
+        avg_probs = {q: round(prob_sums[q] / 10, 4) for q in queryVars}
+
+
+        print(f"B_count_true: {B_count_true}")
+        print(f"B_count_false: {B_count_false}")
+        print(f"E_count_true: {E_count_true}")
+        print(f"E_count_false: {E_count_false}")
+        print(f"A_count_true: {A_count_true}")
+        print(f"A_count_false: {A_count_false}")
+        print(f"J_count_true: {J_count_true}")
+        print(f"J_count_false: {J_count_false}")
+        print(f"M_count_true: {M_count_true}")
+        print(f"M_count_false: {M_count_false}")
+        print("")
+
+        print(avg_probs)
+
+        return avg_probs
 
 
 
@@ -166,4 +253,9 @@ class BayNet:
 
 
 if __name__ == "__main__":
-    BayNet.prior()
+    evidenceVars = {"A": True, "B": False}
+    queryVars = ["J"]
+    conv = input("input sample size: ")
+    num_samp = int(conv)
+
+    BayNet.prior(evidenceVars, queryVars, num_samp, num_runs=10)
