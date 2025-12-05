@@ -41,64 +41,12 @@ class BayNet:
         "M" : Node([.70, .01], "M", ["A"])
     }
 
-    def P(V, value, e):
-        node = BayNet.Nodes[V]
-        parent_values = tuple(e[p] for p in node.parents)
-
-        if value:
-            return node.cpt[parent_values]
-        else: 
-            return 1 - node.cpt[parent_values]
-
-
-    def getEnumeration(vars: List[str]):
-        result = []
-        domains = {var: [True, False] for var in vars}
-
-        for assignment in itertools.product(*[domains[v] for v in vars]):
-            result.append(dict(zip(vars, assignment)))
-        return result
-        
-
-    def enumerateAll(vars: list, e: dict) -> float:
-        if(len(vars) == 0):
-            return 1.0
-        
-        V = vars[0]
-        rest = vars[1:]
-
-        if V in e:
-            return BayNet.P(V, e[V], e) * BayNet.enumerateAll(rest, e)
-        else:
-            prob = 0
-            for v in [True, False]:
-                e_extended = {**e, V: v}
-                prob += BayNet.P(V, v ,e_extended) * BayNet.enumerateAll(rest, e_extended)
-            return prob
 
         
 
+    def exact_inference(evidenceVars, queryVars):
+        return
 
-
-    def enumerateAsk(evidenceVars: Dict[str, bool], queryVars: List[str]):
-        Q = {}
-        enumeration = BayNet.getEnumeration(queryVars)
-        for state in enumeration:
-        
-            exi = {**evidenceVars, **state}
-            Q[tuple(state.items())] = BayNet.enumerateAll(BayNet.all_vars, exi)
-        
-        total = sum(Q.values())
-        for key in Q:
-            Q[key] /= total
-
-        Q_normalized = {}
-        for k, v in Q.items():
-            Q_normalized[tuple(k)] = v
-        return Q_normalized
-    
-
-    
 
     def prior(evidenceVars = dict[str, bool], queryVars=None):
 
