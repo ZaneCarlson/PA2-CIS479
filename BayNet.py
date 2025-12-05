@@ -99,7 +99,7 @@ class BayNet:
         return Q_normalized
 
 
-    def prior(evidenceVars: Dict[str, bool], queryVars: List[str], num_samples: int, num_runs: int = 10):
+    def prior(evidenceVars: Dict[str, bool], queryVars: List[str], num_samples: int):
         B_count_true = 0
         B_count_false = 0
         E_count_true = 0
@@ -258,4 +258,4 @@ if __name__ == "__main__":
     conv = input("input sample size: ")
     num_samp = int(conv)
 
-    BayNet.prior(evidenceVars, queryVars, num_samp, num_runs=10)
+    BayNet.prior(evidenceVars, queryVars, num_samp)
