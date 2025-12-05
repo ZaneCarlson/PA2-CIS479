@@ -1,8 +1,8 @@
 import BayNet
 
 
-queryVars = ["B", "E"]
+queryVars = ["B", "J"]
 
-result = BayNet.BayNet.enumerateAsk({"M": True, "J": False}, queryVars)
+result = BayNet.BayNet.enumerateAsk({"A": False}, queryVars)
 
 print(result)
