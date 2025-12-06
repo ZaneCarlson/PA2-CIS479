@@ -190,7 +190,10 @@ class BayNet:
             while(len(samples) < num_samples):
                 sample = BayNet.generateSample()
                 if all(sample[var] == evidenceVars[var] for var in evidenceVars):
-                    samples.append(sample)      
+                    samples.append(sample)   
+                    print(sample["A"]) 
+                    print(len(samples))  
+            
 
             matches = 0
             for sample in samples:
@@ -202,12 +205,53 @@ class BayNet:
 
         print(f"P({queryVars} | {evidenceVars} ) = {result}")
         return result
+        
 
+    def generateLWSample(evidenceVars: Dict[str, bool]):
+        sample = {}
+        weight = 1.0
 
-    def LW(evidenceVars: Dict[str, bool], queryVars: List[str], num_samples: int):
-        return
+        B_prob = BayNet.Nodes["B"].cpt[()]
+        if "B" in evidenceVars:
+            sample["B"] = evidenceVars["B"]
+            weight *= B_prob if sample["B"] else (1 - B_prob)
+        else:
+            sample["B"] = (random.random() < B_prob)
 
+        E_prob = BayNet.Nodes["E"].cpt[()]
+        if "E" in evidenceVars:
+            sample["E"] = evidenceVars["E"]
+            weight *= E_prob if sample["E"] else (1 - E_prob)
+        else:
+            sample["E"] = (random.random() < E_prob)
+        
+        A_prob = BayNet.Nodes["A"].cpt[(sample["B"], sample["E"])]
+        if "A" in evidenceVars:
+            sample["A"] = evidenceVars["A"]
+            weight *= A_prob if sample["A"] else (1 - A_prob)
+        else:
+            sample["A"] = (random.random() < A_prob)
 
+        J_prob = BayNet.Nodes["J"].cpt[(sample["A"],)]
+        if "J" in evidenceVars:
+            sample ["J"] = evidenceVars["J"]
+            weight *= J_prob if sample["J"] else (1 - J_prob)
+        else:
+            sample["J"] = (random.random() < J_prob)
+
+        M_prob = BayNet.Nodes["M"].cpt[(sample["A"],)]
+        if "M" in evidenceVars:
+            sample ["M"] = evidenceVars["M"]
+            weight *= M_prob if sample["M"] else (1 - M_prob)
+        else:
+            sample["M"] = (random.random() < M_prob)
+
+        return (sample, weight)
+
+    def lw(evidenceVars, queryVars, num_samples): #TODO : finish the lw function
+        samples = []
+        for x in range(num_samples):
+            samples.append(BayNet.generateLWSample(evidenceVars))
 
 if __name__ == "__main__":
 
@@ -216,4 +260,4 @@ if __name__ == "__main__":
     conv = input("input sample size: ")
     num_samp = int(conv)
 
-    BayNet.Rejection(evidenceVars, queryVars, num_samp)
+    BayNet.lw(evidenceVars, queryVars, num_samp)
