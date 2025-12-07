@@ -182,7 +182,7 @@ class BayNet:
         print(f"P({queryVars} | {evidenceVars} ) = {result}")
         return result
 
-    def Rejection(evidenceVars, queryVars, num_samples):
+    def Rejection(evidenceVars: Dict[str, bool], queryVars: List[str], num_samples: int):
         result = 0
         for x in range(10):
             samples = []
@@ -191,8 +191,8 @@ class BayNet:
                 sample = BayNet.generateSample()
                 if all(sample[var] == evidenceVars[var] for var in evidenceVars):
                     samples.append(sample)   
-                    print(sample["A"]) 
-                    print(len(samples))  
+                   # print(sample["A"])
+                    #print(len(samples))
             
 
             matches = 0
@@ -201,6 +201,7 @@ class BayNet:
                     matches += 1
         
             result += matches/len(samples)
+
         result /= 10
 
         print(f"P({queryVars} | {evidenceVars} ) = {result}")
@@ -248,16 +249,75 @@ class BayNet:
 
         return (sample, weight)
 
-    def lw(evidenceVars, queryVars, num_samples): #TODO : finish the lw function
-        samples = []
-        for x in range(num_samples):
-            samples.append(BayNet.generateLWSample(evidenceVars))
+    def lw(evidenceVars: Dict[str, bool], queryVars: List[str], num_samples: int): #TODO : finish the lw function
+        result = 0.0
+
+        for a in range(10):
+            total_weight = 0.0
+            match_weight = 0.0
+            for x in range(num_samples):
+
+                sample, weight = BayNet.generateLWSample(evidenceVars)
+                total_weight += weight
+
+                if all (sample[var] is True for var in queryVars):
+                    match_weight += weight
+
+            # just checking for div by zero even though it won't happen like ever
+            if total_weight > 0:
+                run_prob = match_weight / total_weight
+            else:
+                run_prob = 0.0
+
+            result += run_prob
+
+        result /= 10.0
+
+        print(f"P({queryVars} | {evidenceVars}) = {result}")
+        return result
+
+
 
 if __name__ == "__main__":
 
-    evidenceVars = {"A": False}
-    queryVars = ["J", "B"]
     conv = input("input sample size: ")
     num_samp = int(conv)
 
-    BayNet.lw(evidenceVars, queryVars, num_samp)
+
+    # *Expression one*
+    print(" ")
+    print("1. Alarm is false, infer Burglary and JohnCalls being true")
+    evidenceVars1 = {"A": False}
+    queryVars1 = ["J", "B"]
+    print("Prior")
+    BayNet.prior(evidenceVars1, queryVars1, num_samp)
+    print("Rejection")
+    BayNet.Rejection(evidenceVars1, queryVars1, num_samp)
+    print("lw")
+    BayNet.lw(evidenceVars1, queryVars1, num_samp)
+
+
+    # *Expression two*
+    print(" ")
+    print("1. JohnCalls is true, Earthquake is false, infer Burglary and MaryCalls being true.")
+    evidenceVars2 = {"J": True, "E": False}
+    queryVars2 = ["B", "M"]
+    print("Prior")
+    BayNet.prior(evidenceVars2, queryVars2, num_samp)
+    print("Rejection")
+    BayNet.Rejection(evidenceVars2, queryVars2, num_samp)
+    print("lw")
+    BayNet.lw(evidenceVars2, queryVars2, num_samp)
+
+
+    # *Expression three*
+    print(" ")
+    print("3. MaryCalls is true and JohnCalls is false, infer Burglary and Earthquake being true")
+    evidenceVars3 = {"M": True, "J": False}
+    queryVars3 = ["B", "E"]
+    print("Prior")
+    BayNet.prior(evidenceVars3, queryVars3, num_samp)
+    print("Rejection")
+    BayNet.Rejection(evidenceVars3, queryVars3, num_samp)
+    print("lw")
+    BayNet.lw(evidenceVars3, queryVars3, num_samp)
