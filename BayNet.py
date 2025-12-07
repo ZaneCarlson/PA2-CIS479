@@ -1,5 +1,6 @@
 import random
 import itertools
+import re
 from typing import List, Dict
 
 class Node:
@@ -96,6 +97,10 @@ class BayNet:
         Q_normalized = {}
         for k, v in Q.items():
             Q_normalized[tuple(k)] = v
+
+        true_state = tuple((var, True) for var in queryVars)
+        value = Q_normalized.get(true_state, None)
+        print(value)
         return Q_normalized
 
     def generateSample():
@@ -278,46 +283,64 @@ class BayNet:
 
 
 
+def parse_input(input_str: str):
+    """
+    Parses input like: [< A, t >< B, f >][J, M]
+    Returns: (evidenceVars: dict, queryVars: list)
+    """
+
+    # Extract the two bracketed groups
+    m = re.match(r"\s*\[(.*?)\]\s*\[(.*?)\]\s*$", input_str)
+    if not m:
+        raise ValueError("Invalid input format")
+
+    evidence_raw, query_raw = m.groups()
+
+    # --- Evidence parsing ---
+    # Matches things like < A, t >
+    evidence_pairs = re.findall(r"<\s*([A-Za-z])\s*,\s*([tfTF])\s*>", evidence_raw)
+
+    evidenceVars = {}
+    for var, val in evidence_pairs:
+        evidenceVars[var] = (val.lower() == "t")
+
+    # --- Query parsing ---
+    # Query is a list of variables separated by commas or whitespace
+    queryVars = re.findall(r"[A-Za-z]", query_raw)
+
+    return evidenceVars, queryVars
+
 if __name__ == "__main__":
 
     conv = input("input sample size: ")
     num_samp = int(conv)
 
+    while True:
+        print("\nEnter query in format [< A, t >< B, f >][J, M]")
+        print("Or type 'exit' to quit.")
+        raw = input("Input: ").strip()
 
-    # *Expression one*
-    print(" ")
-    print("1. Alarm is false, infer Burglary and JohnCalls being true")
-    evidenceVars1 = {"A": False}
-    queryVars1 = ["J", "B"]
-    print("Prior")
-    BayNet.prior(evidenceVars1, queryVars1, num_samp)
-    print("Rejection")
-    BayNet.Rejection(evidenceVars1, queryVars1, num_samp)
-    print("lw")
-    BayNet.lw(evidenceVars1, queryVars1, num_samp)
+        if raw.lower() == "exit":
+            break
 
+        try:
+            evidenceVars, queryVars = parse_input(raw)
+        except Exception as e:
+            print("Parse error:", e)
+            continue
 
-    # *Expression two*
-    print(" ")
-    print("1. JohnCalls is true, Earthquake is false, infer Burglary and MaryCalls being true.")
-    evidenceVars2 = {"J": True, "E": False}
-    queryVars2 = ["B", "M"]
-    print("Prior")
-    BayNet.prior(evidenceVars2, queryVars2, num_samp)
-    print("Rejection")
-    BayNet.Rejection(evidenceVars2, queryVars2, num_samp)
-    print("lw")
-    BayNet.lw(evidenceVars2, queryVars2, num_samp)
+        print("\nParsed:")
+        print("Evidence:", evidenceVars)
+        print("Query:", queryVars)
 
+        print("\n=== Exact ===")
+        BayNet.enumerateAsk(evidenceVars, queryVars)
 
-    # *Expression three*
-    print(" ")
-    print("3. MaryCalls is true and JohnCalls is false, infer Burglary and Earthquake being true")
-    evidenceVars3 = {"M": True, "J": False}
-    queryVars3 = ["B", "E"]
-    print("Prior")
-    BayNet.prior(evidenceVars3, queryVars3, num_samp)
-    print("Rejection")
-    BayNet.Rejection(evidenceVars3, queryVars3, num_samp)
-    print("lw")
-    BayNet.lw(evidenceVars3, queryVars3, num_samp)
+        print("\n=== Prior Sampling ===")
+        BayNet.prior(evidenceVars, queryVars, num_samp)
+
+        print("\n=== Rejection Sampling ===")
+        BayNet.Rejection(evidenceVars, queryVars, num_samp)
+
+        print("\n=== Likelihood Weighting ===")
+        BayNet.lw(evidenceVars, queryVars, num_samp)
